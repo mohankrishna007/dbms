@@ -1,0 +1,119 @@
+CREATE TABLE employee(empno INT NOT NULL PRIMARY KEY, empname VARCHAR(20) NOT NULL, basic INT, dob DATE, deptno INT, hra INT, da INT, gross INT,net INT);
+
+CREATE TABLE department(deptno int NOT NULL PRIMARY KEY, deptname VARCHAR(20) NOT NULL, description VARCHAR2(100));
+
+
+ALTER TABLE employee drop column deptno;
+
+ALTER TABLE employee add deptno INT;
+
+ALTER TABLE employee ADD FOREIGN KEY(deptno) REFERENCES department(deptno);
+
+ALTER TABLE employee MODIFY BASIC INT NOT NULL;
+
+ALTER TABLE employee ADD CONSTRAINT basic_check CHECK(basic >= 5000);
+
+ALTER TABLE employee add deductions INT;
+
+
+DECLARE 
+     e_empno employee.empno%type;
+     e_basic employee.basic%type;
+     e_hra employee.hra%type;
+     e_da employee.da%type;
+     e_deductions employee.deductions%type;
+     e_gross employee.gross%type;
+     e_net employee.net%type;
+
+     CURSOR e_employees is
+     select empno, basic from employee;
+BEGIN
+     OPEN e_employees;
+     LOOP
+       FETCH e_employees into e_empno, e_basic;
+       EXIT WHEN e_employees%NOTFOUND;
+       dbms_output.put_line(e_empno || 'employee'|| e_basic);
+
+       IF e_basic > 15000 THEN 
+          e_hra := e_basic*0.12;
+          e_da := e_basic*0.08;
+          e_deductions := e_basic*0.22;
+
+       ELSIF e_basic > 12000 THEN 
+          e_hra := e_basic*0.1;
+          e_da := e_basic*0.06;
+          e_deductions := e_basic*0.2;
+
+       ELSIF e_basic > 9000 THEN 
+          e_hra := e_basic*0.07;
+          e_da := e_basic*0.04;
+          e_deductions := e_basic*0.1;
+       
+        ELSE
+           e_hra := e_basic*0.5;
+           e_da := e_basic*200;
+           e_deductions := e_basic*0.01;
+        END IF;
+
+        e_net := e_basic + e_hra + e_da - e_deductions;
+        e_gross := e_basic + e_hra + e_da;
+        DBMS_OUTPUT.PUT_LINE('BASIC: ' ||e_basic);
+        DBMS_OUTPUT.PUT_LINE('HRA: ' ||e_hra);
+        DBMS_OUTPUT.PUT_LINE('DA: '||e_da);
+        DBMS_OUTPUT.PUT_LINE('DEDUCTIONS: '||e_deductions);
+        DBMS_OUTPUT.PUT_LINE('GROSS: '||e_gross);
+        DBMS_OUTPUT.PUT_LINE('NET: '||e_net);
+
+    UPDATE employee
+      SET hra=e_hra, da=e_da, deductions=e_deductions, gross=e_gross, net=e_net WHERE empno=e_empno;
+    
+     END LOOP;
+     CLOSE e_employees;
+
+END;
+
+CREATE OR REPLACE TRIGGER salary_changes
+ BEFORE
+  INSERT OR UPDATE OR DELETE ON employee
+ FOR EACH ROW 
+  WHEN (NEW.empno >0 AND NEW.basic <5000)
+ BEGIN
+  dbms_output.put_line(' Changes are Not allowed');
+  RAISE_APPLICATION_ERROR(-20101,' SALARY UPDATION IS NOT ACCEPTED');
+ END;
+
+
+ALTER TABLE employee ADD CONSTRAINT hra_assertion CHECK(hra > BASIC*010);
+ALTER TABLE employee ADD CONSTRAINT da_assertion CHECK(da > BASIC*0.45);
+
+CREATE SEQUENCE seq_person
+MINVALUE 1
+START WITH 1
+INCREMENT BY 1
+CACHE 10;
+
+INSERT INTO department VALUES(1, 'cse', 'something');
+
+INSERT INTO employee(empno, empname, basic, deptno) VALUES(seq_person.nextval, 'EMP1', 23000 ,1);
+INSERT INTO employee(empno, empname, basic, deptno) VALUES(seq_person.nextval, 'EMP2', 1000,1);
+
+ALTER TABLE employee MODIFY dob DEFAULT '1-JAN-1990'
+ SELECT * FROM EMPLOYEE WHERE EMPNO = &NUM
+
+alter table department modify bal not null
+update department set bal = 60 where deptno = 1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
